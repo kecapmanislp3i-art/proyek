@@ -1,0 +1,86 @@
+/*
+ Theme Name:        Prespa Commerce
+ Theme URI:         https://nasiothemes.com/themes/prespa/
+ Description:       Prespa Commerce serves as a child theme of Prespa, inheriting all the features of Prespa. The theme is tailored for e-commerce websites and integrates flawlessly with WooCommerce. It is suitable for blogs, portfolio websites, business websites, fashion stores, accessory shops, boutiques and other types of online shops. Theme demo: https://prespa-commerce-demo.nasiothemes.com/
+ Author:            Atanas Yonkov
+ Author URI:        http://nasiothemes.com
+ Template:          prespa
+ Requires at least: 6.1
+ Tested up to:      6.7
+ Requires PHP:      5.6
+ Version:           1.0.7
+ License:           GNU General Public License v2 or later
+ License URI:       http://www.gnu.org/licenses/gpl-2.0.html
+ Text Domain:       prespa-commerce
+ Tags:              blog, portfolio, e-commerce, one-column, two-columns, three-columns, four-columns, grid-layout, right-sidebar, left-sidebar, block-patterns, wide-blocks, custom-colors, custom-header, custom-logo, custom-menu, featured-image-header, featured-images, footer-widgets, full-width-template, rtl-language-support, sticky-post, theme-options, threaded-comments, translation-ready
+*/
+
+/* Add your child theme's custom css below */
+
+.dark-mode {
+    --wp--preset--color--btn-bgr: #404040;
+}
+
+.pattern-product-categories img {
+    width: 7rem;
+}
+
+.pattern-testimonials .wp-block-column {
+    background-color: #fff;
+}
+
+.prespa-instagram-feed img {
+    filter: grayscale(100%);
+    transition: filter 0.6s ease-in-out;
+}
+
+.prespa-instagram-feed img:hover {
+    filter: grayscale(25%);
+}
+
+.pattern-commerce-features.section-features figure::before {
+    background: #f5f5f5;
+    height: 3rem;
+    opacity: 1;
+    transform: translate(-3px,-10px);
+    width: 3rem;
+}
+
+.woocommerce ul.products li.product {
+    background: #fff;
+    padding: 1rem;
+}
+
+.wc-block-components-product-sale-badge.wc-block-components-product-sale-badge--align-right.wc-block-grid__product-onsale, 
+.woocommerce span.onsale {
+    background-color: #950002 !important;
+    color: #fff;
+    border-radius: 1.25rem !important;
+    text-transform: capitalize;
+    border: 0;
+    font-size: .75rem;
+    padding: 0.0625rem .75rem;
+    line-height: 1.5rem;
+}
+
+.cart-contents .cart-counter {
+    background-color: #950002;
+}
+
+.wc-block-components-product-sale-badge.wc-block-components-product-sale-badge--align-right.wc-block-grid__product-onsale:after {
+    content: "!"
+}
+
+.dark-mode .pattern-product-categories,
+.dark-mode .pattern-cta {
+    --wp--preset--color--white: #262626
+}
+
+.dark-mode .header-pattern .wp-block-button {
+    --wp--preset--color--text-primary: #404040
+}
+
+.dark-mode.woocommerce ul.products li.product {
+    background: #262626;
+    padding: 1rem;
+}

@@ -1,0 +1,694 @@
+<?php
+
+namespace WPSpeedo_Team;
+
+use WP_Query;
+
+if ( ! defined('ABSPATH') ) exit;
+
+class Upgrader {
+
+    public static $instance = null;
+    public $old_version;
+    public $new_version;
+
+    public function __construct( $old_version, $new_version ) {
+        $this->old_version = $old_version;
+        $this->new_version = $new_version;
+        $this->run();
+    }
+    
+	public static function instance( $old_version, $new_version ) {
+        if ( is_null( self::$instance ) ) {
+            self::$instance = new self( $old_version, $new_version );
+		}
+        return self::$instance;
+    }
+
+    public function upgrade_paths() {
+        return [ '2.4.0', '2.5.7', '2.5.8', '2.7.0', '3.1.0', '3.2.1', '3.3.1', '3.4.5', '3.4.6', '3.5.7', '4.0.0', '4.1.1', '4.1.2' ];
+    }
+
+    public function run() {
+        if ( $this->old_version === $this->new_version ) return;
+        foreach ( $this->upgrade_paths() as $version ) {
+            if ( version_compare( $version, $this->old_version, '>' ) ) {
+                $ungrade_fn = '_v_' . str_replace( '.', '_', $version );
+                if ( method_exists( $this, $ungrade_fn ) ) {
+                    $this->$ungrade_fn();
+                }
+            }
+        }
+    }
+
+    public function _v_2_4_0() {
+
+        $themes = [
+            'theme-one'   => 'square-01',
+            'theme-two'   => 'square-02',
+            'theme-three' => 'square-03',
+            'theme-four'  => 'square-04',
+            'theme-five'  => 'square-05',
+            'theme-six'   => 'circle-01',
+            'horiz-one'   => 'horiz-01',
+            'horiz-two'   => 'horiz-02',
+            'horiz-three' => 'horiz-03',
+            'horiz-four'  => 'horiz-04',
+        ];
+
+        global $wpdb;
+
+        $shortcodes = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}wps_team ORDER BY created_at DESC", ARRAY_A ); // phpcs:ignore
+        
+        foreach ( $shortcodes as &$shortcode ) {
+
+            $shortcode['settings'] = maybe_unserialize( $shortcode['settings'] );
+
+            if ( !empty( $theme = $shortcode['settings']['theme']['value'] ) && array_key_exists( $theme, $themes ) ) {
+                $shortcode['settings']['theme']['value'] = $themes[ $theme ];
+
+                $shortcode['settings'] = maybe_serialize( $shortcode['settings'] );
+                $shortcode["updated_at"] = current_time('mysql');
+                $wpdb->update( "{$wpdb->prefix}wps_team" , $shortcode, array( 'id' => $shortcode['id'] ),  plugin()->api->db_columns_format() ); // phpcs:ignore
+            }
+
+        }
+
+
+        Utils::clear_shortcodes_cache();
+    }
+    public function _v_2_5_7() {
+
+        if ( ! wps_team_fs()->can_use_premium_code() ) return;
+        
+        global $wpdb;
+        
+        $shortcodes = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}wps_team ORDER BY created_at DESC", ARRAY_A ); // phpcs:ignore
+        
+        foreach ( $shortcodes as &$shortcode ) {
+
+            $shortcode['settings'] = maybe_unserialize( $shortcode['settings'] );
+
+            if ( $shortcode['settings']['typo_name_font_size']['value'] == 0 ) $shortcode['settings']['typo_name_font_size']['value'] = '';
+            if ( $shortcode['settings']['typo_name_font_size_mobile']['value'] == 0 ) $shortcode['settings']['typo_name_font_size_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_name_font_size_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_name_font_size_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_name_font_size_tablet']['value'] == 0 ) $shortcode['settings']['typo_name_font_size_tablet']['value'] = '';
+
+            if ( $shortcode['settings']['typo_desig_font_size']['value'] == 0 ) $shortcode['settings']['typo_desig_font_size']['value'] = '';
+            if ( $shortcode['settings']['typo_desig_font_size_mobile']['value'] == 0 ) $shortcode['settings']['typo_desig_font_size_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_desig_font_size_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_desig_font_size_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_desig_font_size_tablet']['value'] == 0 ) $shortcode['settings']['typo_desig_font_size_tablet']['value'] = '';
+
+            if ( $shortcode['settings']['typo_content_font_size']['value'] == 0 ) $shortcode['settings']['typo_content_font_size']['value'] = '';
+            if ( $shortcode['settings']['typo_content_font_size_mobile']['value'] == 0 ) $shortcode['settings']['typo_content_font_size_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_content_font_size_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_content_font_size_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_content_font_size_tablet']['value'] == 0 ) $shortcode['settings']['typo_content_font_size_tablet']['value'] = '';
+
+            if ( $shortcode['settings']['typo_meta_font_size']['value'] == 0 ) $shortcode['settings']['typo_meta_font_size']['value'] = '';
+            if ( $shortcode['settings']['typo_meta_font_size_mobile']['value'] == 0 ) $shortcode['settings']['typo_meta_font_size_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_meta_font_size_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_meta_font_size_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_meta_font_size_tablet']['value'] == 0 ) $shortcode['settings']['typo_meta_font_size_tablet']['value'] = '';
+
+            $shortcode['settings'] = maybe_serialize( $shortcode['settings'] );
+            $shortcode["updated_at"] = current_time('mysql');
+            $wpdb->update( "{$wpdb->prefix}wps_team" , $shortcode, array( 'id' => $shortcode['id'] ),  plugin()->api->db_columns_format() ); // phpcs:ignore
+
+        }
+
+
+        Utils::clear_shortcodes_cache();
+    }
+    public function _v_2_5_8() {
+
+        if ( ! wps_team_fs()->can_use_premium_code() ) return;
+        
+        global $wpdb;
+        
+        $shortcodes = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}wps_team ORDER BY created_at DESC", ARRAY_A ); // phpcs:ignore
+        
+        foreach ( $shortcodes as &$shortcode ) {
+
+            $shortcode['settings'] = maybe_unserialize( $shortcode['settings'] );
+
+            // Type Name
+
+            if ( $shortcode['settings']['typo_name_font_size']['value'] == 0 ) $shortcode['settings']['typo_name_font_size']['value'] = '';
+            if ( $shortcode['settings']['typo_name_font_size_mobile']['value'] == 0 ) $shortcode['settings']['typo_name_font_size_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_name_font_size_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_name_font_size_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_name_font_size_tablet']['value'] == 0 ) $shortcode['settings']['typo_name_font_size_tablet']['value'] = '';
+
+            if ( $shortcode['settings']['typo_name_line_height']['value'] == 0 ) $shortcode['settings']['typo_name_line_height']['value'] = '';
+            if ( $shortcode['settings']['typo_name_line_height_mobile']['value'] == 0 ) $shortcode['settings']['typo_name_line_height_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_name_line_height_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_name_line_height_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_name_line_height_tablet']['value'] == 0 ) $shortcode['settings']['typo_name_line_height_tablet']['value'] = '';
+
+            if ( $shortcode['settings']['typo_name_letter_spacing']['value'] == 0 ) $shortcode['settings']['typo_name_letter_spacing']['value'] = '';
+            if ( $shortcode['settings']['typo_name_letter_spacing_mobile']['value'] == 0 ) $shortcode['settings']['typo_name_letter_spacing_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_name_letter_spacing_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_name_letter_spacing_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_name_letter_spacing_tablet']['value'] == 0 ) $shortcode['settings']['typo_name_letter_spacing_tablet']['value'] = '';
+
+            // Type Desig
+
+            if ( $shortcode['settings']['typo_desig_font_size']['value'] == 0 ) $shortcode['settings']['typo_desig_font_size']['value'] = '';
+            if ( $shortcode['settings']['typo_desig_font_size_mobile']['value'] == 0 ) $shortcode['settings']['typo_desig_font_size_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_desig_font_size_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_desig_font_size_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_desig_font_size_tablet']['value'] == 0 ) $shortcode['settings']['typo_desig_font_size_tablet']['value'] = '';
+
+            if ( $shortcode['settings']['typo_desig_line_height']['value'] == 0 ) $shortcode['settings']['typo_desig_line_height']['value'] = '';
+            if ( $shortcode['settings']['typo_desig_line_height_mobile']['value'] == 0 ) $shortcode['settings']['typo_desig_line_height_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_desig_line_height_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_desig_line_height_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_desig_line_height_tablet']['value'] == 0 ) $shortcode['settings']['typo_desig_line_height_tablet']['value'] = '';
+
+            if ( $shortcode['settings']['typo_desig_letter_spacing']['value'] == 0 ) $shortcode['settings']['typo_desig_letter_spacing']['value'] = '';
+            if ( $shortcode['settings']['typo_desig_letter_spacing_mobile']['value'] == 0 ) $shortcode['settings']['typo_desig_letter_spacing_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_desig_letter_spacing_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_desig_letter_spacing_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_desig_letter_spacing_tablet']['value'] == 0 ) $shortcode['settings']['typo_desig_letter_spacing_tablet']['value'] = '';
+
+            // Type Content
+
+            if ( $shortcode['settings']['typo_content_font_size']['value'] == 0 ) $shortcode['settings']['typo_content_font_size']['value'] = '';
+            if ( $shortcode['settings']['typo_content_font_size_mobile']['value'] == 0 ) $shortcode['settings']['typo_content_font_size_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_content_font_size_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_content_font_size_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_content_font_size_tablet']['value'] == 0 ) $shortcode['settings']['typo_content_font_size_tablet']['value'] = '';
+
+            if ( $shortcode['settings']['typo_content_line_height']['value'] == 0 ) $shortcode['settings']['typo_content_line_height']['value'] = '';
+            if ( $shortcode['settings']['typo_content_line_height_mobile']['value'] == 0 ) $shortcode['settings']['typo_content_line_height_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_content_line_height_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_content_line_height_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_content_line_height_tablet']['value'] == 0 ) $shortcode['settings']['typo_content_line_height_tablet']['value'] = '';
+
+            if ( $shortcode['settings']['typo_content_letter_spacing']['value'] == 0 ) $shortcode['settings']['typo_content_letter_spacing']['value'] = '';
+            if ( $shortcode['settings']['typo_content_letter_spacing_mobile']['value'] == 0 ) $shortcode['settings']['typo_content_letter_spacing_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_content_letter_spacing_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_content_letter_spacing_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_content_letter_spacing_tablet']['value'] == 0 ) $shortcode['settings']['typo_content_letter_spacing_tablet']['value'] = '';
+
+            // Typo Meta
+
+            if ( $shortcode['settings']['typo_meta_font_size']['value'] == 0 ) $shortcode['settings']['typo_meta_font_size']['value'] = '';
+            if ( $shortcode['settings']['typo_meta_font_size_mobile']['value'] == 0 ) $shortcode['settings']['typo_meta_font_size_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_meta_font_size_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_meta_font_size_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_meta_font_size_tablet']['value'] == 0 ) $shortcode['settings']['typo_meta_font_size_tablet']['value'] = '';
+
+            if ( $shortcode['settings']['typo_meta_line_height']['value'] == 0 ) $shortcode['settings']['typo_meta_line_height']['value'] = '';
+            if ( $shortcode['settings']['typo_meta_line_height_mobile']['value'] == 0 ) $shortcode['settings']['typo_meta_line_height_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_meta_line_height_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_meta_line_height_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_meta_line_height_tablet']['value'] == 0 ) $shortcode['settings']['typo_meta_line_height_tablet']['value'] = '';
+
+            if ( $shortcode['settings']['typo_meta_letter_spacing']['value'] == 0 ) $shortcode['settings']['typo_meta_letter_spacing']['value'] = '';
+            if ( $shortcode['settings']['typo_meta_letter_spacing_mobile']['value'] == 0 ) $shortcode['settings']['typo_meta_letter_spacing_mobile']['value'] = '';
+            if ( $shortcode['settings']['typo_meta_letter_spacing_small_tablet']['value'] == 0 ) $shortcode['settings']['typo_meta_letter_spacing_small_tablet']['value'] = '';
+            if ( $shortcode['settings']['typo_meta_letter_spacing_tablet']['value'] == 0 ) $shortcode['settings']['typo_meta_letter_spacing_tablet']['value'] = '';
+
+            $shortcode['settings'] = maybe_serialize( $shortcode['settings'] );
+            $shortcode["updated_at"] = current_time('mysql');
+            $wpdb->update( "{$wpdb->prefix}wps_team" , $shortcode, array( 'id' => $shortcode['id'] ),  plugin()->api->db_columns_format() ); // phpcs:ignore
+
+        }
+
+
+        Utils::clear_shortcodes_cache();
+    }
+    public function _v_2_7_0() {
+
+        if ( ! wps_team_fs()->can_use_premium_code() ) return;
+        
+        global $wpdb;
+        
+        $shortcodes = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}wps_team ORDER BY created_at DESC", ARRAY_A ); // phpcs:ignore
+        
+        foreach ( $shortcodes as &$shortcode ) {
+
+            $shortcode['settings'] = maybe_unserialize( $shortcode['settings'] );
+
+            $filter_inner_space                 = (int) $shortcode['settings']['filter_inner_space']['value'];
+            $filter_inner_space_mobile          = (int) $shortcode['settings']['filter_inner_space_mobile']['value'];
+            $filter_inner_space_small_tablet    = (int) $shortcode['settings']['filter_inner_space_small_tablet']['value'];
+            $filter_inner_space_tablet          = (int) $shortcode['settings']['filter_inner_space_tablet']['value'];
+
+            if ( $filter_inner_space != 0 ) {
+                $shortcode['settings']['filter_inner_space']['value'] = $filter_inner_space * 2;
+            }
+
+            if ( $filter_inner_space_mobile != 0 ) {
+                $shortcode['settings']['filter_inner_space_mobile']['value'] = $filter_inner_space_mobile * 2;
+            }
+
+            if ( $filter_inner_space_small_tablet != 0 ) {
+                $shortcode['settings']['filter_inner_space_small_tablet']['value'] = $filter_inner_space_small_tablet * 2;
+            }
+
+            if ( $filter_inner_space_tablet != 0 ) {
+                $shortcode['settings']['filter_inner_space_tablet']['value'] = $filter_inner_space_tablet * 2;
+            }
+
+            $shortcode['settings'] = maybe_serialize( $shortcode['settings'] );
+            $shortcode["updated_at"] = current_time('mysql');
+            $wpdb->update( "{$wpdb->prefix}wps_team" , $shortcode, array( 'id' => $shortcode['id'] ),  plugin()->api->db_columns_format() ); // phpcs:ignore
+
+        }
+
+
+        Utils::clear_shortcodes_cache();
+    }
+    public function _v_3_1_0() {
+
+        // Copy Taxonomy Settings from old to new key
+		$defaults = Utils::default_settings();
+		$settings = (array) get_option( Utils::get_option_name(), $defaults );
+		$settings = array_merge( $defaults, $settings );
+        $taxonomy_setting_keys = array_flip( Utils::taxonomies_settings_keys() );
+        $settings = array_intersect_key( $settings, $taxonomy_setting_keys );
+        update_option( Utils::get_taxonomies_option_name(), $settings );
+        
+        // Twitter Icon change
+        $team_members = get_posts([
+            'fields'         => 'ids',
+            'post_type'      => Utils::post_type_name(),
+            'posts_per_page' => -1,
+            'post_status'    => 'any',
+        ]);
+
+        foreach ( $team_members as $team_member_id ) {
+            $changed = false;
+            $social_links = Utils::get_item_data( '_social_links', $team_member_id );
+
+            foreach ( $social_links as &$social_link ) {
+                if ( $social_link['social_icon']['icon'] == 'fab fa-twitter' ) {
+                    $changed = true;
+                    $social_link['social_icon']['icon'] = 'fab fa-x-twitter';
+                }
+            }
+
+            if ( $changed ) {
+                update_post_meta( $team_member_id, '_social_links', $social_links );
+            }
+
+        }
+
+    }
+
+    public function _v_3_2_1() {
+
+        if ( ! class_exists( '\Elementor\Plugin' ) ) return;
+
+        $args = [
+            'post_type' => 'any',
+            'posts_per_page' => -1,
+            'fields' => 'ids',
+            'meta_query' => [ // phpcs:ignore
+                [
+                    'key' => '_elementor_data',
+                    'compare' => 'EXISTS'
+                ]
+            ]
+        ];
+    
+        $query = new WP_Query($args);
+    
+        foreach ($query->posts as $post_id) {
+            $elementor_data = Utils::elementor_get_post_meta( $post_id );
+
+            if ( ! str_contains( json_encode($elementor_data), 'wpspeedo_team' ) ) continue;
+
+            // Flag to check if the post was updated
+            $updated = false;
+    
+            // Loop through the Elementor sections and elements
+            $this->_v_3_2_1_update_elementor_shortcode_id( $elementor_data, $updated );
+    
+            // Only update the post meta if changes were made
+            if ( $updated ) {
+
+                // Save as array if it was originally an array
+                Utils::elementor_update_post_meta( $post_id, $elementor_data );
+            }
+
+        }
+    
+        wp_reset_postdata();
+    }
+
+    public function _v_3_2_1_update_elementor_shortcode_id( &$widgets, &$updated ) {
+
+        foreach ($widgets as &$widget) {
+    
+            if ( isset($widget['widgetType']) && $widget['widgetType'] === 'wpspeedo_team' ) {
+                if ( isset($widget['settings']['shortcode_id']) && is_numeric($widget['settings']['shortcode_id']) ) {
+                    if ( ! str_contains( $widget['settings']['shortcode_id'], 'shortcode-' ) ) {
+                        $widget['settings']['shortcode_id'] = 'shortcode-' . $widget['settings']['shortcode_id'];
+                        $updated = true;
+                    }
+                }
+                continue;
+            }
+    
+            // Recursively check for nested sections
+            if (!empty($widget['elements'])) {
+                $this->_v_3_2_1_update_elementor_shortcode_id( $widget['elements'], $updated );
+            }
+
+        }
+
+    }
+
+    public function _v_3_3_1() {
+        
+        $team_members = get_posts([
+            'fields'         => 'ids',
+            'post_type'      => Utils::post_type_name(),
+            'posts_per_page' => -1,
+            'post_status'    => 'any',
+        ]);
+
+        foreach ( $team_members as $team_member_id ) {
+            Utils::update_name_fields_from_title( $team_member_id, get_the_title( $team_member_id ) );
+        }
+
+    }
+
+    public function _v_3_4_5() {
+
+        global $wpdb;
+
+        $shortcodes = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}wps_team ORDER BY created_at DESC", ARRAY_A ); // phpcs:ignore
+        
+        foreach ( $shortcodes as &$shortcode ) {
+
+            $shortcode['settings'] = Utils::maybe_decoded_data( $shortcode['settings'] );
+
+            if ( ! empty( $shortcode['settings']['ribbon_text_color']['value'] ) ) {
+                $shortcode['settings']['detail_ribbon_text_color'] = [
+                    'value' => $shortcode['settings']['ribbon_text_color']['value']
+                ];
+            }
+
+            if ( ! empty( $shortcode['settings']['ribbon_bg_color']['value'] ) ) {
+                $shortcode['settings']['detail_ribbon_bg_color'] = [
+                    'value' => $shortcode['settings']['ribbon_bg_color']['value']
+                ];
+            }
+
+            $shortcode['settings'] = json_encode( $shortcode['settings'] );
+            $shortcode["updated_at"] = current_time('mysql');
+            $wpdb->update( "{$wpdb->prefix}wps_team" , $shortcode, array( 'id' => $shortcode['id'] ),  plugin()->api->db_columns_format() ); // phpcs:ignore
+
+        }
+
+
+        Utils::clear_shortcodes_cache();
+    }
+    public function _v_3_4_6() {
+
+        $this->_v_3_4_5();
+
+    }
+
+    public function _v_3_5_7() {
+        // copy the value from enable_archive to enable_singular_page
+        $settings = Utils::get_general_settings();
+        $settings['enable_singular_page'] = $settings['enable_archive'];
+        update_option( Utils::get_option_name(), $settings ); // phpcs:ignore
+    }
+
+    public function _v_4_0_0() {
+        $settings       = Utils::get_general_settings();
+        $general_dirty  = false;
+
+        if ( array_key_exists( 'read_more_link_text', $settings ) ) {
+            $settings['read_more_btn_text'] = $settings['read_more_link_text'];
+            $general_dirty = true;
+        }
+
+        foreach ( Utils::get_taxonomy_roots( true ) as $tax_root ) {
+            $meta_key = Utils::to_field_key( $tax_root ) . '_meta_label';
+            if ( array_key_exists( $meta_key, $settings ) ) {
+                unset( $settings[ $meta_key ] );
+                $general_dirty = true;
+            }
+        }
+
+        if ( $general_dirty ) {
+            update_option( Utils::get_option_name(), $settings ); // phpcs:ignore
+        }
+
+        global $wpdb;
+
+        $shortcodes = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}wps_team ORDER BY created_at DESC", ARRAY_A ); // phpcs:ignore
+
+        foreach ( $shortcodes as $shortcode ) {
+            $decoded = Utils::maybe_decoded_data( $shortcode['settings'] );
+            if ( ! is_array( $decoded ) ) {
+                continue;
+            }
+
+            $changed = false;
+
+            if ( array_key_exists( 'add_read_more', $decoded ) ) {
+                $old   = $decoded['add_read_more'];
+                $raw   = is_array( $old ) ? ( $old['value'] ?? '' ) : $old;
+                $is_on = wp_validate_boolean( $raw );
+
+                $decoded['show_read_more_link'] = [
+                    'value' => $is_on ? 'true' : 'false',
+                ];
+                unset( $decoded['add_read_more'] );
+                $changed = true;
+            }
+
+            if ( array_key_exists( 'show_read_more', $decoded ) ) {
+                $decoded['show_read_more_btn'] = $decoded['show_read_more'];
+                unset( $decoded['show_read_more'] );
+                $changed = true;
+            }
+
+            if ( array_key_exists( 'order_read_more', $decoded ) ) {
+                $decoded['order_read_more_btn'] = $decoded['order_read_more'];
+                unset( $decoded['order_read_more'] );
+                $changed = true;
+            }
+
+            if ( ! $changed ) {
+                continue;
+            }
+
+            $shortcode['settings']   = wp_json_encode( $decoded );
+            $shortcode['updated_at'] = current_time( 'mysql' );
+            $wpdb->update( "{$wpdb->prefix}wps_team", $shortcode, [ 'id' => $shortcode['id'] ], plugin()->api->db_columns_format() ); // phpcs:ignore
+        }
+
+        Utils::clear_shortcodes_cache();
+    }
+
+    public function _v_4_1_1() {
+
+        global $wpdb;
+
+        $shortcodes = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}wps_team ORDER BY created_at DESC", ARRAY_A ); // phpcs:ignore
+
+        foreach ( $shortcodes as $shortcode ) {
+
+            $decoded = Utils::maybe_decoded_data( $shortcode['settings'] );
+
+            if ( ! is_array( $decoded ) ) {
+                continue;
+            }
+
+            if ( ! $this->migrate_panel_style_keys_4_1_1( $decoded ) ) {
+                continue;
+            }
+
+            $shortcode['settings']   = wp_json_encode( $decoded );
+            $shortcode['updated_at'] = current_time( 'mysql' );
+            $wpdb->update( "{$wpdb->prefix}wps_team", $shortcode, [ 'id' => $shortcode['id'] ], plugin()->api->db_columns_format() ); // phpcs:ignore
+        }
+    }
+
+    /**
+     * Rename member gallery meta `_gallery` → `_wps_member_gallery` to avoid collisions
+     * with themes/plugins that also use a bare `gallery` / `_gallery` field (e.g. Option Tree).
+     */
+    public function _v_4_1_2() {
+
+        global $wpdb;
+
+        $post_type   = Utils::post_type_name();
+        $old_key     = Utils::member_gallery_meta_key_legacy();
+        $new_key     = Utils::member_gallery_meta_key();
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT pm.meta_id, pm.post_id, pm.meta_value
+				FROM {$wpdb->postmeta} pm
+				INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+				WHERE pm.meta_key = %s
+				AND p.post_type = %s",
+                $old_key,
+                $post_type
+            ),
+            ARRAY_A
+        );
+
+        if ( empty( $rows ) ) {
+            return;
+        }
+
+        foreach ( $rows as $row ) {
+            $post_id = (int) $row['post_id'];
+
+            if ( metadata_exists( 'post', $post_id, $new_key ) ) {
+                delete_metadata_by_mid( 'post', (int) $row['meta_id'] );
+                continue;
+            }
+
+            $wpdb->update(
+                $wpdb->postmeta,
+                [ 'meta_key' => $new_key ],
+                [ 'meta_id' => (int) $row['meta_id'] ],
+                [ '%s' ],
+                [ '%d' ]
+            );
+
+            clean_post_cache( $post_id );
+        }
+    }
+
+    protected function migrate_panel_style_keys_4_1_1( array &$settings ) {
+
+        $changed = false;
+
+        if (
+            $this->copy_shortcode_setting( $settings, 'panel_background', 'detail_content_bg_color' )
+            || $this->migrate_background_group_to_color_setting( $settings, 'panel_background_', 'detail_content_bg_color' )
+        ) {
+            $changed = true;
+        }
+
+        if (
+            $this->copy_shortcode_setting( $settings, 'panel_overlay_background', 'detail_overlay_bg_color' )
+            || $this->migrate_background_group_to_color_setting( $settings, 'panel_overlay_background_', 'detail_overlay_bg_color' )
+        ) {
+            $changed = true;
+        }
+
+        if ( $this->migrate_panel_padding_keys_4_1_1( $settings ) ) {
+            $changed = true;
+        }
+
+        return $changed;
+    }
+
+    protected function migrate_panel_padding_keys_4_1_1( array &$settings ) {
+
+        $changed = false;
+
+        foreach ( [ '', '_tablet', '_small_tablet', '_mobile' ] as $suffix ) {
+            if ( $this->copy_shortcode_setting( $settings, 'panel_padding' . $suffix, 'detail_content_padding' . $suffix ) ) {
+                $changed = true;
+            }
+        }
+
+        return $changed;
+    }
+
+    protected function migrate_background_group_to_color_setting( array &$settings, $prefix, $to_key ) {
+
+        if ( ! $this->is_shortcode_setting_empty( $settings, $to_key ) ) {
+            return false;
+        }
+
+        if ( ! $this->has_background_group_data( $settings, $prefix ) ) {
+            return false;
+        }
+
+        $color = $this->extract_background_group_color( $settings, $prefix );
+
+        if ( $color === '' ) {
+            return false;
+        }
+
+        $settings[ $to_key ] = [
+            'value' => $color,
+        ];
+
+        return true;
+    }
+
+    protected function has_background_group_data( array $settings, $prefix ) {
+
+        foreach ( [ 'background', 'type', 'color', 'gradient_type', 'color_stop', 'color_b' ] as $suffix ) {
+            if ( isset( $settings[ $prefix . $suffix ] ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function extract_background_group_color( array $settings, $prefix ) {
+
+        $color = $this->get_shortcode_setting_value( $settings, $prefix . 'color' );
+
+        return is_string( $color ) ? $color : '';
+    }
+
+    protected function copy_shortcode_setting( array &$settings, $from_key, $to_key ) {
+
+        if ( $this->is_shortcode_setting_empty( $settings, $from_key ) ) {
+            return false;
+        }
+
+        if ( ! $this->is_shortcode_setting_empty( $settings, $to_key ) ) {
+            return false;
+        }
+
+        $settings[ $to_key ] = $settings[ $from_key ];
+
+        return true;
+    }
+
+    protected function is_shortcode_setting_empty( array $settings, $key ) {
+
+        if ( ! isset( $settings[ $key ] ) ) {
+            return true;
+        }
+
+        $setting = $settings[ $key ];
+
+        if ( ! is_array( $setting ) ) {
+            return $setting === '' || $setting === null;
+        }
+
+        if ( ! array_key_exists( 'value', $setting ) ) {
+            return empty( $setting );
+        }
+
+        $value = $setting['value'];
+
+        if ( is_array( $value ) ) {
+            foreach ( [ 'top', 'right', 'bottom', 'left' ] as $side ) {
+                if ( isset( $value[ $side ] ) && strlen( (string) $value[ $side ] ) ) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        return $value === '' || $value === null;
+    }
+
+    protected function get_shortcode_setting_value( array $settings, $key, $default = '' ) {
+
+        if ( ! isset( $settings[ $key ] ) ) {
+            return $default;
+        }
+
+        $setting = $settings[ $key ];
+
+        if ( is_array( $setting ) && array_key_exists( 'value', $setting ) ) {
+            return $setting['value'];
+        }
+
+        return $setting;
+    }
+
+}
